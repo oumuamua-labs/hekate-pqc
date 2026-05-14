@@ -2,7 +2,7 @@
 name = "hekate-pqc"
 version = "0.1.0-pre.1"
 edition = "2024"
-rust-version = "1.85"
+rust-version = "1.87"
 license = "Apache-2.0"
 repository = "https://github.com/oumuamua-labs/hekate-pqc"
 homepage = "https://oumuamua.dev/hekate"
@@ -49,3 +49,6 @@ pqcrypto-mldsa = { version = "0.1", default-features = false, features = ["std"]
 pqcrypto-traits = { version = "0.3", default-features = false, features = ["std"] }
 rand = "0.9"
 zk-scribble = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+bincode = { version = "2.0.1", features = ["serde", "alloc"] }
+serde = { version = "1.0", features = ["derive"] }
