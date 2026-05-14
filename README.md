@@ -17,6 +17,11 @@ Proving on Apple M3 Max:
   ML-DSA-87   : 3.98 s,  580 MB peak, 8,620 KiB proof, 115.6 ms verify
 ```
 
+## Examples
+
+- [ML-KEM-768 decapsulation proof](https://github.com/oumuamua-labs/hekate/blob/main/hekate/examples/mlkem.rs)
+- [ML-DSA signature verification proof](https://github.com/oumuamua-labs/hekate/blob/main/hekate/examples/mldsa.rs)
+
 ## Security & Audits
 
 > [!WARNING]
