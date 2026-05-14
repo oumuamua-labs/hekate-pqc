@@ -534,7 +534,7 @@ dependencies = [
 
 [[package]]
 name = "hekate-pqc"
-version = "0.1.0-pre.1"
+version = "0.1.0-pre.2"
 dependencies = [
  "bincode",
  "hekate-core",

@@ -1,6 +1,6 @@
 [package]
 name = "hekate-pqc"
-version = "0.1.0-pre.1"
+version = "0.1.0-pre.2"
 edition = "2024"
 rust-version = "1.87"
 license = "Apache-2.0"
@@ -33,17 +33,17 @@ sha3 = ["hekate-core/sha3", "hekate-keccak/sha3"]
 
 [dependencies]
 hekate-math = { version = "0.6.0", default-features = false }
-hekate-core = { version = "=0.27.2", default-features = false }
-hekate-program = { version = "=0.27.2", default-features = false }
-hekate-gadgets = { version = "=0.27.2", default-features = false }
+hekate-core = { version = "0.27", default-features = false }
+hekate-program = { version = "0.27", default-features = false }
+hekate-gadgets = { version = "0.27", default-features = false }
 hekate-keccak = { version = "0.1", default-features = false }
 once_cell = { version = "1.21", default-features = false, features = ["race", "alloc"] }
 
 [dev-dependencies]
-hekate-crypto = { version = "=0.27.2", default-features = false, features = ["std", "blake3"] }
-hekate-verifier = { version = "=0.27.2", default-features = false, features = ["std", "blake3"] }
-hekate-sdk = { version = "=0.27.2", default-features = false, features = ["std", "blake3"] }
-hekate-prover-sys = { version = "=0.27.2", default-features = false, features = ["blake3", "public"] }
+hekate-crypto = { version = "0.27", default-features = false, features = ["std", "blake3"] }
+hekate-verifier = { version = "0.27", default-features = false, features = ["std", "blake3"] }
+hekate-sdk = { version = "0.27", default-features = false, features = ["std", "blake3"] }
+hekate-prover-sys = { version = "0.27", default-features = false, features = ["blake3", "public"] }
 pqcrypto-mlkem = { version = "0.1", default-features = false, features = ["std"] }
 pqcrypto-mldsa = { version = "0.1", default-features = false, features = ["std"] }
 pqcrypto-traits = { version = "0.3", default-features = false, features = ["std"] }
