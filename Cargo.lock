@@ -516,6 +516,7 @@ dependencies = [
  "hekate-prover-sys",
  "hekate-sdk",
  "hekate-verifier",
+ "once_cell",
  "pqcrypto-mldsa",
  "pqcrypto-mlkem",
  "pqcrypto-traits",
