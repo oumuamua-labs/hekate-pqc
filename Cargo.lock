@@ -444,9 +444,9 @@ checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
 
 [[package]]
 name = "hekate-core"
-version = "0.27.3"
+version = "0.27.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e9a7e3c17aacc6b3eacae131750adb99e9f8f2d5ddef4f626868bfdf8c14a86"
+checksum = "ffeb0f1deb83a0e4d0cb57f32e46f7eb313c3e7885b0ef74d69dd4a508a4b43b"
 dependencies = [
  "hekate-crypto",
  "hekate-math",
@@ -457,9 +457,9 @@ dependencies = [
 
 [[package]]
 name = "hekate-crypto"
-version = "0.27.3"
+version = "0.27.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5d6b7a2398c94ab2fdbbaf4b7ab2d473f3b9cb30538d6b2705e959320094887e"
+checksum = "4871ab771260a174d008a8b8180b68af2de09ae5ba187279efaaf47e3f52bdf1"
 dependencies = [
  "blake3",
  "hekate-math",
@@ -469,9 +469,9 @@ dependencies = [
 
 [[package]]
 name = "hekate-gadgets"
-version = "0.27.3"
+version = "0.27.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "838bbc7fd54592442a0bf56404e79f7941b4e0b56a853acdcc965fe21dfbbb09"
+checksum = "057c42c7b175f88e9f88d142e9119b4bd95beeb0e0166865b89f326895f61e88"
 dependencies = [
  "hekate-core",
  "hekate-math",
@@ -526,9 +526,9 @@ dependencies = [
 
 [[package]]
 name = "hekate-program"
-version = "0.27.3"
+version = "0.27.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "823ecfe1e9effbac223e05d5794e367fc0a382f937ff790f83ba5cfcaf9c0191"
+checksum = "1b5ec48343b3fcc4f2de3a42d078905c0a7a713c733181f05c3be964ae5288a6"
 dependencies = [
  "hashbrown 0.17.1",
  "hekate-core",
@@ -538,9 +538,9 @@ dependencies = [
 
 [[package]]
 name = "hekate-prover-sys"
-version = "0.27.3"
+version = "0.27.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aa8ccf4d2fd21309d604197d4c959bc5e5a1423c73641c758701ed2b31c6d8e5"
+checksum = "867dd74144fa2b0a7bb5c18ad7d9a2c9b5df9d4279d39216cd5047b3d881447d"
 dependencies = [
  "base64",
  "ed25519-dalek",
@@ -562,9 +562,9 @@ dependencies = [
 
 [[package]]
 name = "hekate-sdk"
-version = "0.27.3"
+version = "0.27.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4ad8120fc2447a9502368a69ea531a03f72e6cb9c49dd24748ee28270c2b39c"
+checksum = "1c27ae88ee3bc1d0bc45a961e49e43faa4f9ba9558ff21a8ac380fce3fc25b1c"
 dependencies = [
  "flatbuffers",
  "hashbrown 0.17.1",
@@ -576,9 +576,9 @@ dependencies = [
 
 [[package]]
 name = "hekate-verifier"
-version = "0.27.3"
+version = "0.27.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e0eb98be1046e6ef34a2f9c51a810737727932974dcb65eb770a4d78082ffde"
+checksum = "2687f8d6956ef705c3d8a87928ed8d31ffe84fe768cb79934d8d8957f4c17f17"
 dependencies = [
  "hekate-core",
  "hekate-crypto",
@@ -1642,9 +1642,9 @@ dependencies = [
 
 [[package]]
 name = "zk-scribble"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ccbba5eab7b060d1a7e027378cbd2e2a316c8ae67b87bfddde016997e02a00f"
+checksum = "d37132dc7c5128ee9732792d84b4077566b657a08dd16ccf3f395d90f94c5776"
 dependencies = [
  "hekate-core",
  "hekate-math",
