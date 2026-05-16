@@ -263,7 +263,7 @@ fn prove_and_verify(ops: &[NttOp], label: &str) -> bool {
                 layer: m.layer,
                 butterfly_idx: m.butterfly_idx,
                 w: m.w,
-                is_mulonly: true,
+                is_mulonly: m.is_basemul,
                 active: true,
                 request_idx_tr: 0,
             },
@@ -358,7 +358,7 @@ where
                 layer: m.layer,
                 butterfly_idx: m.butterfly_idx,
                 w: m.w,
-                is_mulonly: true,
+                is_mulonly: m.is_basemul,
                 active: true,
                 request_idx_tr: 0,
             },
@@ -801,8 +801,8 @@ fn exploit_flow_companion_duplication() {
     let phy_ntt_instance = layout.num_packed_b32_cols + 8;
     let phy_pos_a = layout.num_packed_b32_cols + 9;
     let phy_src_layer = layout.num_packed_b32_cols + 11;
-    let phy_s_companion = layout.num_packed_b32_cols + 20;
-    let phy_s_flow_output = layout.num_packed_b32_cols + 21;
+    let phy_s_companion = layout.num_packed_b32_cols + 19;
+    let phy_s_flow_output = layout.num_packed_b32_cols + 20;
 
     let detected = run_tampered_ntt(&ops, |traces| {
         let ntt = &mut traces[0];
@@ -880,7 +880,7 @@ fn scribble_ntt_flip_selector_caught() {
                 layer: m.layer,
                 butterfly_idx: m.butterfly_idx,
                 w: m.w,
-                is_mulonly: true,
+                is_mulonly: m.is_basemul,
                 active: true,
                 request_idx_tr: 0,
             },
@@ -916,6 +916,6 @@ fn scribble_ntt_flip_selector_caught() {
         &witness,
         ScribbleConfig::default()
             .mutations([MutationKind::FlipSelector])
-            .cases(64),
+            .cases(256),
     );
 }
