@@ -910,10 +910,10 @@ fn exploit_keccak_input_unbound() {
     // from Keccak trace row 0.
     // (lanes 0..24 are B64 columns).
     let mut original_input = [0u64; 25];
-    for lane in 0..25 {
+    for (lane, slot) in original_input.iter_mut().enumerate() {
         match &keccak_trace.columns[lane] {
             TraceColumn::B64(data) => {
-                original_input[lane] = data[0].to_tower().0;
+                *slot = data[0].to_tower().0;
             }
             _ => panic!("Keccak lane must be B64"),
         }
@@ -941,11 +941,11 @@ fn exploit_keccak_input_unbound() {
 
     // Update Keccak chiplet trace:
     // 25 rows for call 0 (rows 0..24).
-    for row in 0..25 {
-        for lane in 0..25 {
+    for (row, state) in round_states.iter().enumerate().take(25) {
+        for (lane, &val) in state.iter().enumerate().take(25) {
             match &mut keccak_trace.columns[lane] {
                 TraceColumn::B64(data) => {
-                    data[row] = Block64::from(round_states[row][lane]).to_hardware();
+                    data[row] = Block64::from(val).to_hardware();
                 }
                 _ => panic!("Keccak lane must be B64"),
             }
@@ -1000,10 +1000,10 @@ fn exploit_keccak_input_unbound() {
 
     // Tamper ctrl KeccakInput row
     // (lanes 0..24).
-    for lane in 0..25 {
+    for (lane, &val) in tampered_input.iter().enumerate().take(25) {
         match &mut ctrl.columns[MlKemCtrlColumns::KECCAK_LANES + lane] {
             TraceColumn::B64(data) => {
-                data[ctrl_input_row] = Block64::from(tampered_input[lane]).to_hardware();
+                data[ctrl_input_row] = Block64::from(val).to_hardware();
             }
             _ => panic!("KECCAK_LANES must be B64"),
         }
@@ -1011,10 +1011,10 @@ fn exploit_keccak_input_unbound() {
 
     // Tamper ctrl KeccakOutput row
     // (lanes 0..24 with tampered output).
-    for lane in 0..25 {
+    for (lane, &val) in tampered_output.iter().enumerate().take(25) {
         match &mut ctrl.columns[MlKemCtrlColumns::KECCAK_LANES + lane] {
             TraceColumn::B64(data) => {
-                data[ctrl_output_row] = Block64::from(tampered_output[lane]).to_hardware();
+                data[ctrl_output_row] = Block64::from(val).to_hardware();
             }
             _ => panic!("KECCAK_LANES must be B64"),
         }
@@ -1026,10 +1026,10 @@ fn exploit_keccak_input_unbound() {
     // A real attacker controls the full
     // witness and would do this.
     for row in (ctrl_output_row + 1)..reg_update_end {
-        for lane in 0..17 {
+        for (lane, &val) in tampered_output.iter().enumerate().take(17) {
             match &mut ctrl.columns[MlKemCtrlColumns::RATE_REG + lane] {
                 TraceColumn::B64(data) => {
-                    data[row] = Block64::from(tampered_output[lane]).to_hardware();
+                    data[row] = Block64::from(val).to_hardware();
                 }
                 _ => panic!("RATE_REG must be B64"),
             }
