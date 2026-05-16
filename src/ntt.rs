@@ -59,6 +59,10 @@ use hekate_program::permutation::{PermutationCheckSpec, Source};
 // Column Layout (computed dynamically per modulus)
 // =================================================================
 
+// Trailing Bit selectors:
+// 9 control bits + aux_flow + aux_bound.
+const NTT_CONTROL_BITS: usize = 11;
+
 /// Column index map for the NTT chiplet.
 /// Computed at construction time from
 /// `modulus` and `bit_width`.
@@ -404,8 +408,7 @@ impl NttLayout {
             layout.push(ColumnType::B32);
         }
 
-        // 11 control Bit
-        for _ in 0..11 {
+        for _ in 0..NTT_CONTROL_BITS {
             layout.push(ColumnType::Bit);
         }
 
@@ -428,7 +431,7 @@ impl NttLayout {
             layout.push(ColumnType::B32);
         }
 
-        for _ in 0..11 {
+        for _ in 0..NTT_CONTROL_BITS {
             layout.push(ColumnType::Bit);
         }
 
@@ -485,7 +488,7 @@ impl NttChiplet {
         let expander = VirtualExpander::new()
             .expand_bits(layout.num_packed_b32_cols, ColumnType::B32)
             .pass_through(16, ColumnType::B32)
-            .control_bits(11)
+            .control_bits(NTT_CONTROL_BITS)
             .build()
             .expect("NttChiplet expander");
 
