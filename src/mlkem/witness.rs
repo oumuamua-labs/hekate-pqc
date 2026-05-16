@@ -1142,7 +1142,7 @@ fn poly_basemul_traced(
             ntt_ops.push(ntt::NttOp::MulOnly(ntt::NttMulOnly {
                 b: a[4 * i + k] as u32,
                 w: b[4 * i + k] as u32,
-                layer: 0,
+                layer: crate::twiddle_rom::BASEMUL_LAYER_MARKER,
                 butterfly_idx: *bfly_offset,
                 is_basemul: true,
                 flow_pos: None,
@@ -2142,7 +2142,7 @@ mod tests {
         }
 
         // Verify bfly_idx globally unique
-        let mut seen = alloc::collections::BTreeSet::new();
+        let mut seen = BTreeSet::new();
         for &(_, bfly_idx) in &result.w_side_bindings {
             assert!(
                 seen.insert(bfly_idx),
