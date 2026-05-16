@@ -50,6 +50,15 @@ use hekate_program::constraint::builder::ConstraintSystem;
 use hekate_program::define_columns;
 use hekate_program::permutation::{PermutationCheckSpec, REQUEST_IDX_LABEL, Source};
 
+// Sentinel layer for basemul MulOnly entries;
+// must exceed any real NTT layer (0..=7)
+// and normalization (8).
+pub const BASEMUL_LAYER_MARKER: u32 = 9;
+
+/// Bus ID for w-side binding:
+/// twiddle ROM MulOnly <> ctrl w-side RAM reads.
+pub const TWIDDLE_W_BINDING_BUS_ID: &str = "twiddle_w_binding";
+
 define_columns! {
     pub TwiddleRomColumns {
         LAYER: B32,
@@ -62,12 +71,10 @@ define_columns! {
         // the twiddle_w_binding bus,
         // gated by MULONLY_SELECTOR.
         REQUEST_IDX_TR: B32,
+
+        LAYER_INV: B32,
     }
 }
-
-/// Bus ID for w-side binding:
-/// twiddle ROM MulOnly <> ctrl w-side RAM reads.
-pub const TWIDDLE_W_BINDING_BUS_ID: &str = "twiddle_w_binding";
 
 /// Twiddle Factor ROM Chiplet.
 ///
@@ -159,15 +166,26 @@ impl<F: TowerField> Air<F> for TwiddleRomChiplet {
 
     fn constraint_ast(&self) -> ConstraintAst<F> {
         let cs = ConstraintSystem::<F>::new();
+        let one = cs.one();
+
         cs.assert_boolean(cs.col(TwiddleRomColumns::SELECTOR));
         cs.assert_boolean(cs.col(TwiddleRomColumns::MULONLY_SELECTOR));
 
         // MULONLY_SELECTOR implies SELECTOR
         let sel = cs.col(TwiddleRomColumns::SELECTOR);
         let mulonly = cs.col(TwiddleRomColumns::MULONLY_SELECTOR);
-        let one = cs.one();
+        let layer = cs.col(TwiddleRomColumns::LAYER);
+        let layer_inv = cs.col(TwiddleRomColumns::LAYER_INV);
+
+        let marker = cs.constant(F::from(BASEMUL_LAYER_MARKER));
 
         cs.constrain(mulonly * (one + sel));
+
+        // Pin MULONLY_SELECTOR <> (LAYER == BASEMUL_LAYER_MARKER);
+        // LAYER_INV pinned to 0 when mulonly=1.
+        cs.constrain(mulonly * (layer + marker));
+        cs.constrain((one + mulonly) * ((layer + marker) * layer_inv + one));
+        cs.constrain(mulonly * layer_inv);
 
         cs.build()
     }
@@ -265,8 +283,12 @@ pub fn generate_twiddle_rom_trace(
 
     let mut tb = TraceBuilder::new(&TwiddleRomColumns::build_layout(), num_vars)?;
 
+    let marker = Block32::from(BASEMUL_LAYER_MARKER);
+    let marker_inv = marker.invert();
+
     for (i, entry) in entries.iter().enumerate() {
         if !entry.active {
+            tb.set_b32(TwiddleRomColumns::LAYER_INV, i, marker_inv)?;
             continue;
         }
 
@@ -277,7 +299,6 @@ pub fn generate_twiddle_rom_trace(
             Block32::from(entry.butterfly_idx),
         )?;
         tb.set_b32(TwiddleRomColumns::W_VALUE, i, Block32::from(entry.w))?;
-
         tb.set_bit(TwiddleRomColumns::SELECTOR, i, Bit::ONE)?;
 
         if entry.is_mulonly {
@@ -287,7 +308,20 @@ pub fn generate_twiddle_rom_trace(
                 i,
                 Block32::from(entry.request_idx_tr),
             )?;
+            tb.set_b32(TwiddleRomColumns::LAYER_INV, i, Block32::ZERO)?;
+        } else {
+            assert_ne!(
+                entry.layer, BASEMUL_LAYER_MARKER,
+                "non-mulonly TwiddleEntry must not collide with BASEMUL_LAYER_MARKER",
+            );
+
+            let layer_plus_marker = Block32::from(entry.layer) + marker;
+            tb.set_b32(TwiddleRomColumns::LAYER_INV, i, layer_plus_marker.invert())?;
         }
+    }
+
+    for i in entries.len()..num_rows {
+        tb.set_b32(TwiddleRomColumns::LAYER_INV, i, marker_inv)?;
     }
 
     Ok(tb.build())
@@ -367,7 +401,7 @@ mod tests {
 
     #[test]
     fn twiddle_rom_column_count() {
-        assert_eq!(TwiddleRomColumns::NUM_COLUMNS, 6);
+        assert_eq!(TwiddleRomColumns::NUM_COLUMNS, 7);
     }
 
     #[test]
@@ -468,7 +502,7 @@ mod tests {
                 request_idx_tr: 0,
             },
             TwiddleEntry {
-                layer: 0,
+                layer: BASEMUL_LAYER_MARKER,
                 butterfly_idx: 1,
                 w: 17,
                 is_mulonly: true,

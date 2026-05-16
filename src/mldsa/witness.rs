@@ -1075,7 +1075,7 @@ fn pointwise_mul_traced(
         ops.push(ntt::NttOp::MulOnly(ntt::NttMulOnly {
             b: b[i],
             w: a[i],
-            layer: 0,
+            layer: crate::twiddle_rom::BASEMUL_LAYER_MARKER,
             butterfly_idx: *bfly_offset,
             is_basemul: true,
             flow_pos: None,
@@ -1180,7 +1180,7 @@ mod tests {
     fn nist_reference_multiple_keypairs() {
         for i in 0..5 {
             let (nist_pk, nist_sk) = mldsa65::keypair();
-            let msg = alloc::format!("test message {i}");
+            let msg = format!("test message {i}");
 
             let nist_sig = mldsa65::detached_sign(msg.as_bytes(), &nist_sk);
 
