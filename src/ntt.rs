@@ -154,13 +154,16 @@ pub struct NttLayout {
     pub s_active: usize,
     pub s_output: usize,
     pub s_butterfly: usize,
-    pub s_forward: usize,
     pub s_companion: usize,
     pub s_flow_output: usize,
     pub s_flow_input: usize,
     pub s_bound_in: usize,
     pub s_bound_out: usize,
     pub s_mulonly: usize,
+
+    // Pin s_companion at degree 3
+    pub aux_flow: usize,
+    pub aux_bound: usize,
 
     // Totals (virtual)
     pub num_columns: usize,
@@ -299,16 +302,18 @@ impl NttLayout {
         let s_active = num_expanded_bits + 16;
         let s_output = num_expanded_bits + 17;
         let s_butterfly = num_expanded_bits + 18;
-        let s_forward = num_expanded_bits + 19;
-        let s_companion = num_expanded_bits + 20;
-        let s_flow_output = num_expanded_bits + 21;
-        let s_flow_input = num_expanded_bits + 22;
-        let s_bound_in = num_expanded_bits + 23;
-        let s_bound_out = num_expanded_bits + 24;
-        let s_mulonly = num_expanded_bits + 25;
+        let s_companion = num_expanded_bits + 19;
+        let s_flow_output = num_expanded_bits + 20;
+        let s_flow_input = num_expanded_bits + 21;
+        let s_bound_in = num_expanded_bits + 22;
+        let s_bound_out = num_expanded_bits + 23;
+        let s_mulonly = num_expanded_bits + 24;
 
-        let num_columns = num_expanded_bits + 26;
-        let num_physical_columns = num_packed_b32_cols + 26;
+        let aux_flow = num_expanded_bits + 25;
+        let aux_bound = num_expanded_bits + 26;
+
+        let num_columns = num_expanded_bits + 27;
+        let num_physical_columns = num_packed_b32_cols + 27;
 
         NttLayout {
             bit_width,
@@ -368,13 +373,14 @@ impl NttLayout {
             s_active,
             s_output,
             s_butterfly,
-            s_forward,
             s_companion,
             s_flow_output,
             s_flow_input,
             s_mulonly,
             s_bound_in,
             s_bound_out,
+            aux_flow,
+            aux_bound,
             num_columns,
             num_physical_columns,
             mul_layout,
@@ -398,8 +404,8 @@ impl NttLayout {
             layout.push(ColumnType::B32);
         }
 
-        // 10 control Bit
-        for _ in 0..10 {
+        // 11 control Bit
+        for _ in 0..11 {
             layout.push(ColumnType::Bit);
         }
 
@@ -422,8 +428,7 @@ impl NttLayout {
             layout.push(ColumnType::B32);
         }
 
-        // 10 control Bit
-        for _ in 0..10 {
+        for _ in 0..11 {
             layout.push(ColumnType::Bit);
         }
 
@@ -480,7 +485,7 @@ impl NttChiplet {
         let expander = VirtualExpander::new()
             .expand_bits(layout.num_packed_b32_cols, ColumnType::B32)
             .pass_through(16, ColumnType::B32)
-            .control_bits(10)
+            .control_bits(11)
             .build()
             .expect("NttChiplet expander");
 
@@ -990,14 +995,12 @@ fn build_ntt_constraints<F: TowerField>(
     cs.assert_boolean(cs.col(ly.s_output));
     cs.assert_boolean(cs.col(ly.s_butterfly));
 
-    let s_fwd = cs.col(ly.s_forward);
     let s_comp = cs.col(ly.s_companion);
     let s_fout = cs.col(ly.s_flow_output);
     let s_fin = cs.col(ly.s_flow_input);
     let s_bin = cs.col(ly.s_bound_in);
     let s_bout = cs.col(ly.s_bound_out);
 
-    cs.assert_boolean(s_fwd);
     cs.assert_boolean(s_comp);
     cs.assert_boolean(s_fout);
     cs.assert_boolean(s_fin);
@@ -1008,9 +1011,18 @@ fn build_ntt_constraints<F: TowerField>(
     // are mutually exclusive.
     cs.constrain(s_active * s_comp);
 
-    // s_forward subset of s_active:
-    // only arithmetic rows can be forward.
-    cs.constrain(s_fwd * not_active);
+    let aux_flow = cs.col(ly.aux_flow);
+    let aux_bound = cs.col(ly.aux_bound);
+
+    cs.assert_boolean(aux_flow);
+    cs.assert_boolean(aux_bound);
+
+    cs.constrain(aux_flow + (one + s_fout) * (one + s_fin));
+    cs.constrain(aux_bound + (one + s_bin) * (one + s_bout));
+
+    // Pin s_companion:
+    // requires at least one bus selector to fire.
+    cs.constrain(s_comp * aux_flow * aux_bound);
 
     // s_alive = s_active + s_companion
     // (XOR, no overlap guaranteed above).
@@ -1159,13 +1171,14 @@ pub fn generate_ntt_trace(
     let phy_s_active = num_packed + 16;
     let phy_s_output = num_packed + 17;
     let phy_s_butterfly = num_packed + 18;
-    let phy_s_forward = num_packed + 19;
-    let phy_s_companion = num_packed + 20;
-    let phy_s_flow_output = num_packed + 21;
-    let phy_s_flow_input = num_packed + 22;
-    let phy_s_bound_in = num_packed + 23;
-    let phy_s_bound_out = num_packed + 24;
-    let phy_s_mulonly = num_packed + 25;
+    let phy_s_companion = num_packed + 19;
+    let phy_s_flow_output = num_packed + 20;
+    let phy_s_flow_input = num_packed + 21;
+    let phy_s_bound_in = num_packed + 22;
+    let phy_s_bound_out = num_packed + 23;
+    let phy_s_mulonly = num_packed + 24;
+    let phy_aux_flow = num_packed + 25;
+    let phy_aux_bound = num_packed + 26;
 
     // Derive max_layer from ops.
     // Flow output:
@@ -1204,6 +1217,11 @@ pub fn generate_ntt_trace(
         // Clear bit buffer for this row
         bits.iter_mut().for_each(|w| *w = 0);
 
+        let mut s_fout_set = false;
+        let mut s_fin_set = false;
+        let mut s_bin_set = false;
+        let mut s_bout_set = false;
+
         match op {
             NttOp::Butterfly(bfly) => {
                 fill_butterfly_row_packed(
@@ -1220,19 +1238,19 @@ pub fn generate_ntt_trace(
                 let sl = if bfly.layer > 0 { bfly.layer - 1 } else { 0 };
                 tb.set_b32(phy_src_layer, row, Block32::from(sl))?;
 
-                if bfly.is_forward {
-                    tb.set_bit(phy_s_forward, row, Bit::ONE)?;
-                }
-
                 // Flow + boundary selectors:
                 // active on both forward and inverse
                 // butterflies with valid instance data.
                 if bfly.ntt_instance > 0 || bfly.is_forward {
                     if bfly.layer < max_layer {
+                        s_fout_set = true;
+
                         tb.set_bit(phy_s_flow_output, row, Bit::ONE)?;
                     }
 
                     if bfly.layer > 0 {
+                        s_fin_set = true;
+
                         tb.set_bit(phy_s_flow_input, row, Bit::ONE)?;
 
                         let src = bfly.layer - 1;
@@ -1247,10 +1265,14 @@ pub fn generate_ntt_trace(
                     }
 
                     if bfly.is_forward && bfly.layer == 0 {
+                        s_bin_set = true;
+
                         tb.set_bit(phy_s_bound_in, row, Bit::ONE)?;
                     }
 
                     if bfly.is_forward && bfly.layer == max_layer {
+                        s_bout_set = true;
+
                         tb.set_bit(phy_s_bound_out, row, Bit::ONE)?;
                     }
                 }
@@ -1279,6 +1301,8 @@ pub fn generate_ntt_trace(
                     tb.set_b32(phy_src_layer, row, Block32::from(mul.flow_src_layer))?;
 
                     if mul.layer < max_layer {
+                        s_fout_set = true;
+
                         tb.set_bit(phy_s_flow_output, row, Bit::ONE)?;
                     }
                 }
@@ -1303,10 +1327,14 @@ pub fn generate_ntt_trace(
                 tb.set_b32(phy_src_layer, row, Block32::from(comp.src_layer))?;
 
                 if comp.is_flow_output {
+                    s_fout_set = true;
+
                     tb.set_bit(phy_s_flow_output, row, Bit::ONE)?;
                 }
 
                 if comp.is_flow_input {
+                    s_fin_set = true;
+
                     tb.set_bit(phy_s_flow_input, row, Bit::ONE)?;
 
                     if let Some(&out_row) =
@@ -1320,10 +1348,14 @@ pub fn generate_ntt_trace(
                 }
 
                 if comp.is_forward && comp.layer == 0 {
+                    s_bin_set = true;
+
                     tb.set_bit(phy_s_bound_in, row, Bit::ONE)?;
                 }
 
                 if comp.is_forward && comp.layer == max_layer {
+                    s_bout_set = true;
+
                     tb.set_bit(phy_s_bound_out, row, Bit::ONE)?;
                 }
             }
@@ -1344,6 +1376,20 @@ pub fn generate_ntt_trace(
             }
         }
 
+        let aux_flow_val = if !s_fout_set && !s_fin_set {
+            Bit::ONE
+        } else {
+            Bit::ZERO
+        };
+        let aux_bound_val = if !s_bin_set && !s_bout_set {
+            Bit::ONE
+        } else {
+            Bit::ZERO
+        };
+
+        tb.set_bit(phy_aux_flow, row, aux_flow_val)?;
+        tb.set_bit(phy_aux_bound, row, aux_bound_val)?;
+
         // Flush packed B32 columns
         flush_bit_buffer(&bits, &mut tb, row)?;
     }
@@ -1351,7 +1397,12 @@ pub fn generate_ntt_trace(
     // Fill padding rows with valid witnesses.
     for pad_row in ops.len()..num_rows {
         bits.iter_mut().for_each(|w| *w = 0);
+
         fill_padding_range_checks_packed(&mut bits, &layout, modulus, bit_width);
+
+        tb.set_bit(phy_aux_flow, pad_row, Bit::ONE)?;
+        tb.set_bit(phy_aux_bound, pad_row, Bit::ONE)?;
+
         flush_bit_buffer(&bits, &mut tb, pad_row)?;
     }
 
