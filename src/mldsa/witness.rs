@@ -222,7 +222,7 @@ pub fn ml_dsa_verify_traced(
 
     // Reserve IO slots for pk + sig + msg
     let io_bytes = pk.pk_bytes.len() + sig.level.sig_bytes() + msg.len();
-    let mut next_slot = (io_bytes.next_multiple_of(SLOT as usize) / SLOT as usize) as u32;
+    let mut next_slot = io_bytes.div_ceil(SLOT as usize) as u32;
 
     let mut alloc_slot = || {
         let s = next_slot;

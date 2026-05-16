@@ -276,7 +276,7 @@ pub fn ml_kem_decaps_traced(
     let ct_bytes = level.ct_bytes();
     let io_bytes = ct_bytes + sha3_padding_len(ct_bytes);
 
-    let mut next_slot = (io_bytes.next_multiple_of(SLOT as usize) / SLOT as usize) as u32;
+    let mut next_slot = io_bytes.div_ceil(SLOT as usize) as u32;
     let mut alloc_slot = || {
         let s = next_slot;
         next_slot += 1;
